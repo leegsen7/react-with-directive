@@ -1,0 +1,28 @@
+{
+  "name": "react-directive",
+  "version": "1.0.0",
+  "description": "react use directive",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "leegsen",
+    "email": "leegsen7@gmail.com"
+  },
+  "homepage": "https://github.com/leegsen7/react-directive#readme",
+  "keywords": [
+    "react",
+    "directive"
+  ],
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leegsen7/react-directive.git"
+  },
+  "peerDependencies": {
+    "react": ">=16.2.0",
+    "react-dom": ">=16.2.0"
+  }
+}
