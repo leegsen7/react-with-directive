@@ -1,5 +1,16 @@
 import React from 'react'
+import * as defaultDirectives from './directives'
 
+const omit = (value, keys) => {
+  if (!keys.length) {
+    return {...value}
+  }
+  const newValue = {
+    ...value,
+    ...keys.reduce((pre, cur) => ({ ...pre, [cur]: undefined }), {}),
+  }
+  return JSON.parse(JSON.stringify(newValue))
+}
 const reactCreateElement = React.createElement
 const directives = new Map()
 
@@ -8,15 +19,15 @@ const directives = new Map()
  * @param name
  */
 const checkDirective = name => {
- if (directives.has(name)) {
-   console.error(`The directive name: r-${name} is registered!!!`)
-   return false
- }
- if (!/[a-zA-Z][a-zA-Z\-]?^$/.test(name)) {
-   console.error(`The directive name: r-${name} is invalid!!!`)
-   return false
- }
- return true
+  if (directives.has(name)) {
+    console.error(`The directive name: ${name} is registered!!!`)
+    return false
+  }
+  if (!/^[a-zA-Z]+[a-zA-Z\-]?[a-zA-Z]+$/.test(name)) {
+    console.error(`The directive name: ${name} is invalid!!!`)
+    return false
+  }
+  return true
 }
 
 /**
@@ -40,45 +51,67 @@ const checkOptions = options => {
  * @param props
  */
 const getDirectives = props => {
-  return Object.keys(props || {}).filter(([name]) => {
+  return Object.keys(props || {}).filter(name => {
     return /^r-/.test(name)
-  }).map(item => ({
-    name: item[0].substring(2),
-    value: item[1],
+  }).map(name => ({
+    name,
+    directive: name.substring(2),
+    value: props[name],
   }))
 }
 
 /**
  * 定义注册指令
  * @param name-指令名称
- * @param opitons-指令配置
+ * @param options-指令配置
  */
-export const defineDirective = (name, opitons) => {
-  if (!checkDirective(name) || !checkOptions((opitons))) {
+export const defineDirective = (name, options) => {
+  if (!checkDirective(name) || !checkOptions((options))) {
     return false
   }
   directives.set(name, {
     priority: 1000,
-    ...opitons,
+    ...options,
   })
 }
 
 React.createElement = (type, props, ...childrens) => {
   // 获取匹配指令的list，并根据优先级排序
   const list = getDirectives(props).reduce((pre, cur) => {
-    const opitons = directives.get(cur.name)
-    if (!opitons) {
+    const options = directives.get(cur.directive)
+    if (!options) {
       return pre
     }
     return [
       ...pre,
       {
         ...cur,
-        opitons,
+        options,
       },
     ]
   }, []).sort((a, b) => a.priority - b.priority)
   if (!list.length) {
     return reactCreateElement(type, props, ...childrens)
   }
+  let otherProps = omit(props || {}, list.map(item => item.name))
+  const result = list.every(item => {
+    const curRes = item.options.install({
+      value: item.value,
+      props: otherProps,
+    })
+    if (curRes === null) {
+      return false
+    }
+    otherProps = Object.assign({}, otherProps, curRes)
+    return true
+  })
+  if (!result) {
+    return null
+  }
+  return reactCreateElement(type, otherProps, ...childrens)
 }
+
+Object.entries(defaultDirectives).forEach(([name, options]) => {
+  defineDirective(name.replace(/^r([A-Z])/, (_, val) => val.toLowerCase()), options)
+})
+
