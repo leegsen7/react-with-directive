@@ -5,11 +5,15 @@ const omit = (value, keys) => {
   if (!keys.length) {
     return {...value}
   }
-  const newValue = {
-    ...value,
-    ...keys.reduce((pre, cur) => ({ ...pre, [cur]: undefined }), {}),
-  }
-  return JSON.parse(JSON.stringify(newValue))
+  return Object.entries(value).reduce((pre, cur) => {
+    if (keys.includes(cur[0])) {
+      return pre
+    }
+    return {
+      ...pre,
+      [cur[0]]: cur[1],
+    }
+  }, {})
 }
 const reactCreateElement = React.createElement
 const directives = new Map()
